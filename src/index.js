@@ -5,25 +5,13 @@ import './index.css';
   
 class Pendulum extends React.Component {
   
-    render() {
-      return (
-        <rect>
-
-        </rect>
-      );
-    }
-  }
-  
-class Simulation extends React.Component {
-
     constructor(props) {
         super(props)
         this.state = {
             theta_1: -80 * Math.PI / 180,
-            theta_2: -60 * Math.PI / 180,
+            theta_2: -90 * Math.PI / 180,
             omega_1: 0,
             omega_2: 0,
-            theta_2_path: [],
             E: 0,
         };
     }
@@ -37,10 +25,12 @@ class Simulation extends React.Component {
 
 
     draw() {
-        const canvas = this.refs.canvas;
-        const ctx = canvas.getContext("2d");
-        const l1 = 90;
-        const l2 = 120;
+        const canvas1 = this.refs.canvas1;
+        const canvas2 = this.refs.canvas2;
+        const ctx2 = canvas2.getContext("2d");
+        const ctx = canvas1.getContext("2d");
+        const l1 = 120;
+        const l2 = 90;
         const dt = 1/10;
         const m1 = 70;
         const m2 = 80;
@@ -64,28 +54,43 @@ class Simulation extends React.Component {
         //[omega_1, theta_1, omega_2, theta_2]
         const angles = calcRK(this.state.omega_1, this.state.theta_1, this.state.omega_2, this.state.theta_2, dt, m1, m2, l1, l2, g);
         ctx.clearRect(0, 0, 2000, 2000);
-        ctx.translate( canvas.width/2, canvas.height / 2 );
-        ctx.rotate( angles[1]);
+
+        ctx.translate( canvas1.width/2, canvas1.height / 2 );
+        ctx2.translate( canvas1.width/2, canvas1.height / 2 );
+
+        ctx.rotate( angles[1] );
+        ctx2.rotate( angles[1] );
+
         drawRectangle(l1, m1, ctx);
-        // ctx.rotate( -angles[1]);
 
 
         ctx.translate(0, l1 - 3);
+        ctx2.translate(0, l1 - 3);
+
         ctx.rotate( angles[3] - angles[1] );
+        ctx2.rotate( angles[3] - angles[1] );
+
         drawRectangle(l2, m2, ctx);
+        this.drawPath(l2, ctx2);
+
         ctx.rotate( -angles[3] + angles[1]);
+        ctx2.rotate( -angles[3] + angles[1] );
+
         ctx.translate(0, -l1 + 3);
+        ctx2.translate(0, -l1 + 3);
+
         ctx.rotate(-angles[1]);
+        ctx2.rotate(-angles[1]);
         // ctx.translate( l1 * Math.sin(angles[1]),  - l1 * Math.cos(angles[1]));
 
-        ctx.translate( -canvas.width/2, -canvas.height / 2 )
+        ctx.translate( -canvas1.width/2, -canvas1.height / 2 );
+        ctx2.translate( -canvas1.width/2, -canvas1.height / 2 );
 
         this.setState({
             theta_1: angles[1],
             theta_2: angles[3],
             omega_1: angles[0],
             omega_2: angles[2],
-            theta_2_path: theta_path.concat(angles[3]),
             E: E,
         });
 
@@ -93,12 +98,31 @@ class Simulation extends React.Component {
 
     }
 
+    drawPath(l, ctx) {
+        ctx.fillStyle = 'red';
+        ctx.translate(0 , l);
+        ctx.beginPath();
+        ctx.arc(0,0,2,0*Math.PI,2*Math.PI);
+        ctx.fill();
+        ctx.closePath();
+        ctx.translate(0, -l);
+    }
+
     render() {
         return(
-            <div>
-                <canvas ref="canvas"
-                width={700} height={700} />
+            <div class="wrapper">
+                <canvas ref="canvas1" width={700} height={700} />
+                <canvas ref="canvas2" width={700} height={700} />
             </div>
+        )
+    }
+  }
+  
+class Simulation extends React.Component {
+
+    render() {
+        return(
+            <Pendulum />
         )
     }
 }
@@ -111,8 +135,6 @@ function drawRectangle(l, m, ctx) {
     ctx.arc(0,0,3,0*Math.PI,2*Math.PI)
     ctx.fillStyle = 'blue';
     ctx.fill();
-
-    return 
 }
 
 function calcE(omega_1, omega_2, theta_1, theta_2, l1, l2, m1, m2, g) {
